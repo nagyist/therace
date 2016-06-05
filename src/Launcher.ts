@@ -38,7 +38,11 @@ namespace com.gionadirashvili.therace
             // Start loading assets
             PIXI.loader
                 .add([
-                    "test.png"
+                    "assets/images/turtles/turtle1.png",
+                    "assets/images/turtles/turtle2.png",
+                    "assets/images/turtles/turtle3.png",
+                    "assets/images/bg.png",
+                    "assets/images/chips/chips.json"
                 ])
                 .load(this.onLoadComplete.bind(this))
                 .on("progress", this.onLoadProgress.bind(this));

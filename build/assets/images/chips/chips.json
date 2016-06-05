@@ -1,0 +1,40 @@
+{
+  "frames": {
+      "chips_01.png": {
+          "frame": {"x":0, "y":0, "w":135, "h":135},
+          "spriteSourceSize": {"x":0,"y":0,"w":135,"h":135},
+          "sourceSize": {"w":135,"h":135}
+      },
+      "chips_02.png": {
+          "frame": {"x":136, "y":0, "w":135, "h":135},
+          "spriteSourceSize": {"x":0,"y":0,"w":135,"h":135},
+          "sourceSize": {"w":135,"h":135}
+      },
+      "chips_03.png": {
+          "frame": {"x":272, "y":0, "w":135, "h":135},
+          "spriteSourceSize": {"x":0,"y":0,"w":135,"h":135},
+          "sourceSize": {"w":135,"h":135}
+      },
+      "chips_side_01.png": {
+          "frame": {"x":262, "y":136, "w":130, "h":82},
+          "spriteSourceSize": {"x":0,"y":0,"w":130,"h":82},
+          "sourceSize": {"w":130,"h":82}
+      },
+      "chips_side_02.png": {
+          "frame": {"x":131, "y":136, "w":130, "h":82},
+          "spriteSourceSize": {"x":0,"y":0,"w":130,"h":82},
+          "sourceSize": {"w":130,"h":82}
+      },
+      "chips_side_03.png": {
+          "frame": {"x":0, "y":136, "w":130, "h":82},
+          "spriteSourceSize": {"x":0,"y":0,"w":130,"h":82},
+          "sourceSize": {"w":130,"h":82}
+      }
+
+  },
+  "meta": {
+      "image": "chips.png",
+      "size": {"w": 512, "h": 256},
+      "scale": "1"
+  }
+}

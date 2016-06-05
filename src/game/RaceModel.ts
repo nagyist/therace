@@ -5,6 +5,8 @@ namespace com.gionadirashvili.therace
 {
     export class RaceModel implements IObservable
     {
+        public turtleCount:number = 3;
+
         private _observers:Array<IObserver> = [];
 
         public constructor()

@@ -19,6 +19,8 @@ namespace com.gionadirashvili.therace
 
             // Init model
             this._model = new RaceModel();
+
+            // Set view as model's observer
             this._model.attachObserver(this._view, true);
         }
     }
