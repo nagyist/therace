@@ -613,7 +613,9 @@ var com;
                     this.addChild(this._bg);
                     this._txt.text = slide.text;
                     this.addChild(this._txt);
-                    setTimeout(this.hideSlide, slide.showTime);
+                    // Use -1 to prevent hiding
+                    if (slide.showTime != -1)
+                        setTimeout(this.hideSlide, slide.showTime);
                 };
                 Narator.prototype.hideSlide = function () {
                     this.removeChild(this._txt);
@@ -758,9 +760,9 @@ var com;
                         "Congratulations! You have won " + therace.Helper.formatMoney(winAmount) + "!" :
                         "Sorry, you've lost!";
                     // Show message
-                    this._narator.showSlide(new therace.NaratorSlide("Race Finished!\n" + message, 10000));
+                    this._narator.showSlide(new therace.NaratorSlide("Race Finished!\n" + message + "\n Please refresh the page to replay. State reset not implemented..", -1));
                     // Stop race music
-                    this._raceMusic.stop();
+                    //this._raceMusic.stop();
                     // Reset state
                     this.reset();
                 };

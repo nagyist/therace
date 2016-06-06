@@ -182,12 +182,12 @@ namespace com.gionadirashvili.therace
             // Show message
             this._narator.showSlide(
                 new NaratorSlide(
-                    "Race Finished!\n" + message,
-                    10000)
+                    "Race Finished!\n" + message + "\n Please refresh the page to replay. State reset not implemented..",
+                    -1)
             );
 
             // Stop race music
-            this._raceMusic.stop();
+            //this._raceMusic.stop();
 
             // Reset state
             this.reset();

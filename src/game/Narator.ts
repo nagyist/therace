@@ -59,7 +59,9 @@ namespace com.gionadirashvili.therace
             this._txt.text = slide.text;
             this.addChild(this._txt);
 
-            setTimeout(this.hideSlide, slide.showTime);
+            // Use -1 to prevent hiding
+            if(slide.showTime != -1)
+                setTimeout(this.hideSlide, slide.showTime);
         }
 
         private hideSlide():void
