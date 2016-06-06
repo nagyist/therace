@@ -22,6 +22,8 @@ namespace com.gionadirashvili.therace
 
         private _currentBetAmount:number = 0;
 
+        private _chipAddSound:Howl;
+
         public constructor()
         {
             super();
@@ -107,6 +109,12 @@ namespace com.gionadirashvili.therace
             this._betText.anchor.set(1, 0);
             this._betText.position.set(Launcher.GAME_WIDTH - 10, (statusBg.height - this._betText.height) * .5 + statusBg.y);
             this.addChild(this._betText);
+
+            // Init sounds
+            this._chipAddSound = new Howl({
+                urls: ["assets/sounds/chip.mp3", "assets/sounds/chip.ogg"]
+            });
+            this._chipAddSound.load();
         }
 
         private selectChip(chip:Chip):void
@@ -121,6 +129,7 @@ namespace com.gionadirashvili.therace
         private onPlaceChip(e:any):void
         {
             this.emit("addBet", this._selectedChip.value);
+            this._chipAddSound.play();
         }
 
         private onPlaceBet(e:any):void
@@ -135,6 +144,7 @@ namespace com.gionadirashvili.therace
         private onChipClick(e:any):void
         {
             this.selectChip(e.target as Chip);
+            this._chipAddSound.play();
         }
 
         public update(observable:IObservable):void

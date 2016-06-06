@@ -18,20 +18,27 @@ var com;
                 Helper.formatMoney = function (value) {
                     return (value / 100).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,');
                 };
-                Helper.makeNight = function (list, recursive) {
+                Helper.tint = function (list, tint, recursive) {
                     if (recursive === void 0) { recursive = true; }
                     var obj;
                     for (var i = 0, l = list.length; i < l; i++) {
                         obj = list[i];
                         if (obj.hasOwnProperty("children") && obj["children"] && obj["children"].length > 0)
-                            Helper.makeNight(obj["children"]);
+                            Helper.tint(obj["children"], tint);
                         else if (obj.hasOwnProperty("tint"))
-                            obj["tint"] = 0X005953D1;
+                            obj["tint"] = tint;
                     }
                 };
                 return Helper;
             }());
             therace.Helper = Helper;
+            (function (DayColors) {
+                DayColors[DayColors["Morning"] = 4294967295] = "Morning";
+                DayColors[DayColors["Noon"] = 4293514108] = "Noon";
+                DayColors[DayColors["Evening"] = 4293569877] = "Evening";
+                DayColors[DayColors["Night"] = 5854161] = "Night";
+            })(therace.DayColors || (therace.DayColors = {}));
+            var DayColors = therace.DayColors;
         })(therace = gionadirashvili.therace || (gionadirashvili.therace = {}));
     })(gionadirashvili = com.gionadirashvili || (com.gionadirashvili = {}));
 })(com || (com = {}));
@@ -261,6 +268,11 @@ var com;
                     this._betText.anchor.set(1, 0);
                     this._betText.position.set(therace.Launcher.GAME_WIDTH - 10, (statusBg.height - this._betText.height) * .5 + statusBg.y);
                     this.addChild(this._betText);
+                    // Init sounds
+                    this._chipAddSound = new Howl({
+                        urls: ["assets/sounds/chip.mp3", "assets/sounds/chip.ogg"]
+                    });
+                    this._chipAddSound.load();
                 };
                 BetSystemView.prototype.selectChip = function (chip) {
                     for (var i = 0, l = this._chipSelectors.length; i < l; i++)
@@ -270,6 +282,7 @@ var com;
                 };
                 BetSystemView.prototype.onPlaceChip = function (e) {
                     this.emit("addBet", this._selectedChip.value);
+                    this._chipAddSound.play();
                 };
                 BetSystemView.prototype.onPlaceBet = function (e) {
                     if (this._currentBetAmount != 0) {
@@ -279,6 +292,7 @@ var com;
                 };
                 BetSystemView.prototype.onChipClick = function (e) {
                     this.selectChip(e.target);
+                    this._chipAddSound.play();
                 };
                 BetSystemView.prototype.update = function (observable) {
                 };
@@ -438,6 +452,7 @@ var com;
     (function (gionadirashvili) {
         var therace;
         (function (therace) {
+            var Sprite = PIXI.Sprite;
             var MovieClip = PIXI.extras.MovieClip;
             var Container = PIXI.Container;
             var Rectangle = PIXI.Rectangle;
@@ -478,7 +493,7 @@ var com;
                     var i, tex, frames = [], rect = new Rectangle(0, 0, 96, 66);
                     // Create frames for the MovieClip
                     for (i = startFrame; i <= endFrame; i++) {
-                        // Get texture from the texture cache
+                        // Get texture from the texture cache - I know cloning is NOT the way to go here, but it was a quick solution
                         tex = PIXI.utils.TextureCache[textureId].clone();
                         // Only 10 sprites on a row
                         rect.x = 96 * (i % 10);
@@ -489,6 +504,27 @@ var com;
                     }
                     // Create and return MovieClip
                     return new MovieClip(frames);
+                };
+                Turtle.prototype.stopMovement = function (isWinner) {
+                    this._move.stop();
+                    this.removeChild(this._move);
+                    if (isWinner) {
+                        this.addChild(this._idle);
+                        this._idle.gotoAndPlay(Math.random() * 10);
+                    }
+                    else {
+                        var tex = PIXI.utils.TextureCache[this.TEXTURE_ID_TEMPLATE.replace('$', (this._index + 1).toString())];
+                        tex.frame = new Rectangle(96 * 8, 66, 96, 66);
+                        // Create sleep sprite
+                        this._sleep = new Sprite(tex);
+                        // Set anchor
+                        this._sleep.anchor.set(0.5, 0.5);
+                        // Flip the graphics
+                        this._sleep.scale.x = -1;
+                        // Add to display list
+                        this.addChild(this._sleep);
+                        therace.Helper.tint(this.children, 0x005953D1);
+                    }
                 };
                 Turtle.prototype.updateMovement = function (isWinning) {
                     if (this._idle.parent) {
@@ -567,7 +603,9 @@ var com;
                     this._index++;
                     if (this._index >= this._slides.length)
                         return;
-                    var slide = this._slides[this._index];
+                    this.showSlide(this._slides[this._index]);
+                };
+                Narator.prototype.showSlide = function (slide) {
                     this._bg
                         .beginFill(slide.backgroundColor)
                         .drawRect(0, 0, this._width, this._height)
@@ -581,6 +619,11 @@ var com;
                     this.removeChild(this._txt);
                     this.removeChild(this._bg);
                 };
+                Object.defineProperty(Narator.prototype, "slideCount", {
+                    get: function () { return this._slides.length; },
+                    enumerable: true,
+                    configurable: true
+                });
                 return Narator;
             }(Container));
             therace.Narator = Narator;
@@ -603,14 +646,15 @@ var com;
                 function RaceView(_renderer) {
                     _super.call(this);
                     this._renderer = _renderer;
-                    // Used to optimize draw calls and manually control whether or not should the renderer redraw the stage
-                    this._isDirty = true;
                     this._turtles = [];
+                    this._phaseIndex = 0;
+                    this._winnerIndex = 0;
                     this._state = this.idleState;
                     this.init();
                     // Bind methods to this
                     this.render = this.render.bind(this);
                     this.nextPhase = this.nextPhase.bind(this);
+                    this.showRaceStatus = this.showRaceStatus.bind(this);
                     this.onTurtleClick = this.onTurtleClick.bind(this);
                     // Start rendering loop
                     this.render();
@@ -627,13 +671,23 @@ var com;
                     // Add selection arrow
                     this._selectionArrow = new Sprite(PIXI.utils.TextureCache["assets/images/selectionArrow.png"]);
                     this.addChild(this._selectionArrow);
+                    // Init sounds
+                    this._turtleSelectSound = new Howl({
+                        urls: ["assets/sounds/turtle_select.mp3", "assets/sounds/turtle_select.ogg"]
+                    });
+                    this._turtleSelectSound.load();
+                    this._raceMusic = new Howl({
+                        urls: ["assets/sounds/race_music.mp3", "assets/sounds/race_music.ogg"],
+                        loop: true
+                    });
+                    this._raceMusic.load();
                 };
-                RaceView.prototype.clearState = function () {
+                RaceView.prototype.reset = function () {
                     //TODO clear state
                 };
                 RaceView.prototype.newGame = function (turtleCount) {
                     // Clear old state before starting new game
-                    this.clearState();
+                    this.reset();
                     if (turtleCount == 0)
                         return;
                     // Add turtles to the scene
@@ -649,17 +703,19 @@ var com;
                 };
                 RaceView.prototype.onTurtleClick = function (e) {
                     this.selectTurtle(e.target);
+                    this._turtleSelectSound.play();
                 };
                 RaceView.prototype.update = function (observable) {
                     // Cast observable to RaceModel class for code hinting and since we know no other observable will come in here
                     var model = observable;
-                    // Mark stage as dirty
-                    this._isDirty = true;
                     if (this._turtles.length != model.turtleCount)
                         this.newGame(model.turtleCount);
                 };
                 RaceView.prototype.startRace = function (winnerIndex) {
+                    // Change state
                     this._state = this.raceState;
+                    // Store winner index
+                    this._winnerIndex = winnerIndex;
                     // Hide selection arrow
                     this._selectionArrow.visible = false;
                     var turtle;
@@ -670,10 +726,43 @@ var com;
                         // Update turtles to use move animation
                         turtle.updateMovement(Math.random() * 10 < 5);
                     }
+                    this._raceMusic.play();
                 };
                 RaceView.prototype.nextPhase = function () {
+                    // Show narator slide
                     this.addChild(this._narator);
                     this._narator.nextSlide();
+                    // Increase phase index
+                    this._phaseIndex++;
+                    // Move turtles according to their state and whether or not did they win
+                    var moveAmount = 400 / this._narator.slideCount;
+                    for (var i = 0, l = this._turtles.length; i < l; i++) {
+                        if (this._phaseIndex == this._narator.slideCount) {
+                            if (this._winnerIndex == i)
+                                this._turtles[i].x = 720;
+                            else
+                                this._turtles[i].x = 710 - Math.random() * 35 - 30;
+                        }
+                        else {
+                            this._turtles[i].position.x += moveAmount + Math.random() * 40 - 20;
+                        }
+                    }
+                };
+                RaceView.prototype.finishRace = function () {
+                    this._state = null;
+                    for (var i = 0, l = this._turtles.length; i < l; i++)
+                        this._turtles[i].stopMovement(this._winnerIndex == i);
+                };
+                RaceView.prototype.showRaceStatus = function (winAmount) {
+                    var message = winAmount > 0 ?
+                        "Congratulations! You have won " + therace.Helper.formatMoney(winAmount) + "!" :
+                        "Sorry, you've lost!";
+                    // Show message
+                    this._narator.showSlide(new therace.NaratorSlide("Race Finished!\n" + message, 10000));
+                    // Stop race music
+                    this._raceMusic.stop();
+                    // Reset state
+                    this.reset();
                 };
                 RaceView.prototype.selectTurtle = function (turtle) {
                     // Deselect all
@@ -703,9 +792,9 @@ var com;
                 };
                 RaceView.prototype.render = function () {
                     requestAnimationFrame(this.render);
-                    this._state();
-                    if (this._isDirty)
-                        this._renderer.render(this);
+                    if (this._state)
+                        this._state();
+                    this._renderer.render(this);
                 };
                 Object.defineProperty(RaceView.prototype, "selectedTurtleIndex", {
                     get: function () { return this._selectedTurtle.index; },
@@ -741,6 +830,13 @@ var com;
                     this._playerTurtleIndex = turtleIndex;
                     this._betAmount = betAmount;
                 };
+                Object.defineProperty(RaceModel.prototype, "winAmount", {
+                    get: function () {
+                        return this._winningTurtleIndex == this._playerTurtleIndex ? this._betAmount * 3 : 0;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 Object.defineProperty(RaceModel.prototype, "winnerIndex", {
                     get: function () { return this._winningTurtleIndex; },
                     enumerable: true,
@@ -775,7 +871,9 @@ var com;
                     this._betSystem.view.on("placeBet", this.onPlaceBet.bind(this));
                     this._view.addChild(this._betSystem.view);
                     // Bind methods
-                    this.makeNight = this.makeNight.bind(this);
+                    this.changeDateTime = this.changeDateTime.bind(this);
+                    this.finishRace = this.finishRace.bind(this);
+                    this.showRaceStatus = this.showRaceStatus.bind(this);
                 }
                 RaceController.prototype.onPlaceBet = function (value) {
                     // Lock the UI to prevent clicks
@@ -785,14 +883,27 @@ var com;
                     // Start race
                     this._view.startRace(this._model.winnerIndex);
                     // Schedule phases
+                    setTimeout(this.changeDateTime, 5000, therace.DayColors.Noon);
                     setTimeout(this._view.nextPhase, 5000);
+                    setTimeout(this.changeDateTime, 10000, therace.DayColors.Evening);
                     setTimeout(this._view.nextPhase, 10000);
-                    setTimeout(this.makeNight, 15000);
+                    setTimeout(this.changeDateTime, 15000, therace.DayColors.Night);
                     setTimeout(this._view.nextPhase, 15000);
+                    setTimeout(this.finishRace, 16000);
                 };
-                RaceController.prototype.makeNight = function () {
-                    therace.Helper.makeNight(this._view.children);
-                    therace.Helper.makeNight(this._betSystem.view.children);
+                RaceController.prototype.finishRace = function () {
+                    // Update balance
+                    this._betSystem.win = this._model.winAmount;
+                    this._view.finishRace();
+                    setTimeout(this.showRaceStatus, 4000);
+                };
+                RaceController.prototype.showRaceStatus = function () {
+                    this._view.showRaceStatus(this._model.winAmount);
+                    this.lockUI(false);
+                };
+                RaceController.prototype.changeDateTime = function (tint) {
+                    therace.Helper.tint(this._view.children, tint);
+                    therace.Helper.tint(this._betSystem.view.children, tint);
                 };
                 RaceController.prototype.lockUI = function (value) {
                     this._view.interactiveChildren = !value;

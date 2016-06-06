@@ -27,6 +27,11 @@ namespace com.gionadirashvili.therace
             this._betAmount = betAmount;
         }
 
+        public get winAmount():number
+        {
+            return this._winningTurtleIndex == this._playerTurtleIndex ? this._betAmount * 3 : 0;
+        }
+
         public get winnerIndex():number { return this._winningTurtleIndex; }
     }
 }

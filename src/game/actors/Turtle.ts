@@ -70,7 +70,7 @@ namespace com.gionadirashvili.therace
             // Create frames for the MovieClip
             for(i = startFrame; i <= endFrame; i++)
             {
-                // Get texture from the texture cache
+                // Get texture from the texture cache - I know cloning is NOT the way to go here, but it was a quick solution
                 tex = PIXI.utils.TextureCache[textureId].clone();
 
                 // Only 10 sprites on a row
@@ -84,6 +84,36 @@ namespace com.gionadirashvili.therace
 
             // Create and return MovieClip
             return new MovieClip(frames);
+        }
+
+        public stopMovement(isWinner:boolean):void
+        {
+            this._move.stop();
+            this.removeChild(this._move);
+
+            if(isWinner)
+            {
+                this.addChild(this._idle);
+                this._idle.gotoAndPlay(Math.random() * 10);
+            }
+            else
+            {
+                var tex:Texture = PIXI.utils.TextureCache[this.TEXTURE_ID_TEMPLATE.replace('$', (this._index + 1).toString())];
+                tex.frame = new Rectangle(96 * 8, 66, 96, 66);
+
+                // Create sleep sprite
+                this._sleep = new Sprite(tex);
+
+                // Set anchor
+                this._sleep.anchor.set(0.5, 0.5);
+
+                // Flip the graphics
+                this._sleep.scale.x = -1;
+
+                // Add to display list
+                this.addChild(this._sleep);
+                Helper.tint(this.children, 0x005953D1);
+            }
         }
 
         public updateMovement(isWinning:boolean):void

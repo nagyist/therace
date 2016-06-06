@@ -9,6 +9,7 @@
   },
   "files": [
     "typings/pixi.js.d.ts",
+    "typings/howler.d.ts",
 
     "src/utils/Helper.ts",
 

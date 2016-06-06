@@ -9,9 +9,6 @@ namespace com.gionadirashvili.therace
     import Sprite = PIXI.Sprite;
     export class RaceView extends Container
     {
-        // Used to optimize draw calls and manually control whether or not should the renderer redraw the stage
-        private _isDirty:boolean = true;
-
         private _turtles:Array<Turtle> = [];
         private _selectionArrow:Sprite;
         private _selectedTurtle:Turtle;
@@ -19,6 +16,12 @@ namespace com.gionadirashvili.therace
         private _state:Function;
 
         private _narator:Narator;
+
+        private _phaseIndex:number = 0;
+        private _winnerIndex:number = 0;
+
+        private _turtleSelectSound:Howl;
+        private _raceMusic:Howl;
 
         public constructor(private _renderer:CanvasRenderer|WebGLRenderer)
         {
@@ -30,7 +33,9 @@ namespace com.gionadirashvili.therace
             // Bind methods to this
             this.render = this.render.bind(this);
             this.nextPhase = this.nextPhase.bind(this);
+            this.showRaceStatus = this.showRaceStatus.bind(this);
             this.onTurtleClick = this.onTurtleClick.bind(this);
+
             // Start rendering loop
             this.render();
         }
@@ -50,9 +55,20 @@ namespace com.gionadirashvili.therace
             // Add selection arrow
             this._selectionArrow = new Sprite(PIXI.utils.TextureCache["assets/images/selectionArrow.png"]);
             this.addChild(this._selectionArrow);
+
+            // Init sounds
+            this._turtleSelectSound = new Howl({
+                urls: ["assets/sounds/turtle_select.mp3", "assets/sounds/turtle_select.ogg"]
+            });
+            this._turtleSelectSound.load();
+            this._raceMusic = new Howl({
+                urls: ["assets/sounds/race_music.mp3", "assets/sounds/race_music.ogg"],
+                loop: true
+            });
+            this._raceMusic.load();
         }
 
-        private clearState():void
+        private reset():void
         {
             //TODO clear state
         }
@@ -60,7 +76,7 @@ namespace com.gionadirashvili.therace
         private newGame(turtleCount:number):void
         {
             // Clear old state before starting new game
-            this.clearState();
+            this.reset();
 
             if(turtleCount == 0)
                 return;
@@ -84,6 +100,7 @@ namespace com.gionadirashvili.therace
         private onTurtleClick(e:any):void
         {
             this.selectTurtle(e.target as Turtle);
+            this._turtleSelectSound.play();
         }
 
         public update(observable:IObservable):void
@@ -91,16 +108,17 @@ namespace com.gionadirashvili.therace
             // Cast observable to RaceModel class for code hinting and since we know no other observable will come in here
             var model:RaceModel = observable as RaceModel;
 
-            // Mark stage as dirty
-            this._isDirty = true;
-
             if(this._turtles.length != model.turtleCount)
                 this.newGame(model.turtleCount);
         }
 
         public startRace(winnerIndex:number):void
         {
+            // Change state
             this._state = this.raceState;
+
+            // Store winner index
+            this._winnerIndex = winnerIndex;
 
             // Hide selection arrow
             this._selectionArrow.visible = false;
@@ -116,12 +134,63 @@ namespace com.gionadirashvili.therace
                 // Update turtles to use move animation
                 turtle.updateMovement(Math.random() * 10 < 5);
             }
+
+            this._raceMusic.play();
         }
 
         public nextPhase():void
         {
+            // Show narator slide
             this.addChild(this._narator);
             this._narator.nextSlide();
+
+            // Increase phase index
+            this._phaseIndex++;
+
+            // Move turtles according to their state and whether or not did they win
+            var moveAmount:number = 400 / this._narator.slideCount;
+            for(var i:number = 0, l:number = this._turtles.length; i < l; i++)
+            {
+                if(this._phaseIndex == this._narator.slideCount)
+                {
+                    if(this._winnerIndex == i)
+                        this._turtles[i].x = 720;
+                    else
+                        this._turtles[i].x = 710 - Math.random() * 35 - 30;
+                }
+                else
+                {
+                    this._turtles[i].position.x += moveAmount + Math.random() * 40 - 20;
+                }
+            }
+        }
+
+        public finishRace():void
+        {
+            this._state = null;
+
+            for(var i:number = 0, l:number = this._turtles.length; i < l; i++)
+                this._turtles[i].stopMovement(this._winnerIndex == i);
+        }
+
+        public showRaceStatus(winAmount:number):void
+        {
+            var message:string = winAmount > 0 ?
+                "Congratulations! You have won " + Helper.formatMoney(winAmount) + "!" :
+                "Sorry, you've lost!";
+
+            // Show message
+            this._narator.showSlide(
+                new NaratorSlide(
+                    "Race Finished!\n" + message,
+                    10000)
+            );
+
+            // Stop race music
+            this._raceMusic.stop();
+
+            // Reset state
+            this.reset();
         }
 
         private selectTurtle(turtle:Turtle):void
@@ -166,10 +235,10 @@ namespace com.gionadirashvili.therace
         {
             requestAnimationFrame(this.render);
 
-            this._state();
+            if(this._state)
+                this._state();
 
-            if(this._isDirty)
-                this._renderer.render(this);
+            this._renderer.render(this);
         }
 
         public get selectedTurtleIndex():number { return this._selectedTurtle.index; }

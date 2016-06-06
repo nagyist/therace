@@ -30,7 +30,9 @@ namespace com.gionadirashvili.therace
             this._view.addChild(this._betSystem.view);
 
             // Bind methods
-            this.makeNight = this.makeNight.bind(this);
+            this.changeDateTime = this.changeDateTime.bind(this);
+            this.finishRace = this.finishRace.bind(this);
+            this.showRaceStatus = this.showRaceStatus.bind(this);
         }
 
         private onPlaceBet(value:number):void
@@ -45,16 +47,34 @@ namespace com.gionadirashvili.therace
             this._view.startRace(this._model.winnerIndex);
 
             // Schedule phases
+            setTimeout(this.changeDateTime, 5000, DayColors.Noon);
             setTimeout(this._view.nextPhase, 5000);
+            setTimeout(this.changeDateTime, 10000, DayColors.Evening);
             setTimeout(this._view.nextPhase, 10000);
-            setTimeout(this.makeNight, 15000);
+            setTimeout(this.changeDateTime, 15000, DayColors.Night);
             setTimeout(this._view.nextPhase, 15000);
+            setTimeout(this.finishRace, 16000);
         }
 
-        private makeNight():void
+        private finishRace():void
         {
-            Helper.makeNight(this._view.children);
-            Helper.makeNight(this._betSystem.view.children);
+            // Update balance
+            this._betSystem.win = this._model.winAmount;
+
+            this._view.finishRace();
+            setTimeout(this.showRaceStatus, 4000);
+        }
+
+        private showRaceStatus():void
+        {
+            this._view.showRaceStatus(this._model.winAmount);
+            this.lockUI(false);
+        }
+
+        private changeDateTime(tint:number):void
+        {
+            Helper.tint(this._view.children, tint);
+            Helper.tint(this._betSystem.view.children, tint);
         }
 
         private lockUI(value:boolean):void

@@ -44,8 +44,11 @@ namespace com.gionadirashvili.therace
             if(this._index >= this._slides.length)
                 return;
 
-            var slide:NaratorSlide = this._slides[this._index];
+            this.showSlide(this._slides[this._index]);
+        }
 
+        public showSlide(slide:NaratorSlide):void
+        {
             this._bg
                 .beginFill(slide.backgroundColor)
                 .drawRect(0,0,this._width,this._height)
@@ -64,5 +67,7 @@ namespace com.gionadirashvili.therace
             this.removeChild(this._txt);
             this.removeChild(this._bg);
         }
+
+        public get slideCount():number { return this._slides.length; }
     }
 }
