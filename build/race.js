@@ -18,6 +18,17 @@ var com;
                 Helper.formatMoney = function (value) {
                     return (value / 100).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,');
                 };
+                Helper.makeNight = function (list, recursive) {
+                    if (recursive === void 0) { recursive = true; }
+                    var obj;
+                    for (var i = 0, l = list.length; i < l; i++) {
+                        obj = list[i];
+                        if (obj.hasOwnProperty("children") && obj["children"] && obj["children"].length > 0)
+                            Helper.makeNight(obj["children"]);
+                        else if (obj.hasOwnProperty("tint"))
+                            obj["tint"] = 0X005953D1;
+                    }
+                };
                 return Helper;
             }());
             therace.Helper = Helper;
@@ -515,6 +526,68 @@ var com;
     })(gionadirashvili = com.gionadirashvili || (com.gionadirashvili = {}));
 })(com || (com = {}));
 /**
+ * Created by gio on 6/6/16.
+ */
+var com;
+(function (com) {
+    var gionadirashvili;
+    (function (gionadirashvili) {
+        var therace;
+        (function (therace) {
+            var Container = PIXI.Container;
+            var Graphics = PIXI.Graphics;
+            var Text = PIXI.Text;
+            var NaratorSlide = (function () {
+                function NaratorSlide(text, showTime, backgroundColor) {
+                    if (backgroundColor === void 0) { backgroundColor = 0x0; }
+                    this.text = text;
+                    this.showTime = showTime;
+                    this.backgroundColor = backgroundColor;
+                }
+                return NaratorSlide;
+            }());
+            therace.NaratorSlide = NaratorSlide;
+            var Narator = (function (_super) {
+                __extends(Narator, _super);
+                function Narator(_slides, _width, _height) {
+                    _super.call(this);
+                    this._slides = _slides;
+                    this._width = _width;
+                    this._height = _height;
+                    this._index = -1;
+                    // Bind methods
+                    this.hideSlide = this.hideSlide.bind(this);
+                    // Add background graphics and text
+                    this._bg = new Graphics();
+                    this._txt = new Text("", { font: '24px Arial', fill: 0xEEEEEE, align: 'center' });
+                    this._txt.anchor.set(.5, .5);
+                    this._txt.position.set(_width * .5, _height * .5);
+                }
+                Narator.prototype.nextSlide = function () {
+                    this._index++;
+                    if (this._index >= this._slides.length)
+                        return;
+                    var slide = this._slides[this._index];
+                    this._bg
+                        .beginFill(slide.backgroundColor)
+                        .drawRect(0, 0, this._width, this._height)
+                        .endFill();
+                    this.addChild(this._bg);
+                    this._txt.text = slide.text;
+                    this.addChild(this._txt);
+                    setTimeout(this.hideSlide, slide.showTime);
+                };
+                Narator.prototype.hideSlide = function () {
+                    this.removeChild(this._txt);
+                    this.removeChild(this._bg);
+                };
+                return Narator;
+            }(Container));
+            therace.Narator = Narator;
+        })(therace = gionadirashvili.therace || (gionadirashvili.therace = {}));
+    })(gionadirashvili = com.gionadirashvili || (com.gionadirashvili = {}));
+})(com || (com = {}));
+/**
  * Created by gio on 6/4/16.
  */
 var com;
@@ -533,10 +606,11 @@ var com;
                     // Used to optimize draw calls and manually control whether or not should the renderer redraw the stage
                     this._isDirty = true;
                     this._turtles = [];
-                    this.state = this.idleState;
+                    this._state = this.idleState;
                     this.init();
                     // Bind methods to this
                     this.render = this.render.bind(this);
+                    this.nextPhase = this.nextPhase.bind(this);
                     this.onTurtleClick = this.onTurtleClick.bind(this);
                     // Start rendering loop
                     this.render();
@@ -544,6 +618,12 @@ var com;
                 RaceView.prototype.init = function () {
                     // Add background
                     this.addChild(new Sprite(PIXI.utils.TextureCache["assets/images/bg.png"]));
+                    // Create narator
+                    this._narator = new therace.Narator([
+                        new therace.NaratorSlide("1 hour later...", 2000),
+                        new therace.NaratorSlide("5 hours later...", 2000),
+                        new therace.NaratorSlide("Eventually...", 2000)
+                    ], therace.Launcher.GAME_WIDTH, therace.Launcher.GAME_HEIGHT);
                     // Add selection arrow
                     this._selectionArrow = new Sprite(PIXI.utils.TextureCache["assets/images/selectionArrow.png"]);
                     this.addChild(this._selectionArrow);
@@ -579,7 +659,7 @@ var com;
                         this.newGame(model.turtleCount);
                 };
                 RaceView.prototype.startRace = function (winnerIndex) {
-                    this.state = this.raceState;
+                    this._state = this.raceState;
                     // Hide selection arrow
                     this._selectionArrow.visible = false;
                     var turtle;
@@ -592,6 +672,8 @@ var com;
                     }
                 };
                 RaceView.prototype.nextPhase = function () {
+                    this.addChild(this._narator);
+                    this._narator.nextSlide();
                 };
                 RaceView.prototype.selectTurtle = function (turtle) {
                     // Deselect all
@@ -621,7 +703,7 @@ var com;
                 };
                 RaceView.prototype.render = function () {
                     requestAnimationFrame(this.render);
-                    this.state();
+                    this._state();
                     if (this._isDirty)
                         this._renderer.render(this);
                 };
@@ -692,13 +774,25 @@ var com;
                     this._betSystem = new therace.BetSystem();
                     this._betSystem.view.on("placeBet", this.onPlaceBet.bind(this));
                     this._view.addChild(this._betSystem.view);
+                    // Bind methods
+                    this.makeNight = this.makeNight.bind(this);
                 }
                 RaceController.prototype.onPlaceBet = function (value) {
+                    // Lock the UI to prevent clicks
                     this.lockUI(true);
                     // Place bet in model
                     this._model.receiveBet(this._view.selectedTurtleIndex, value);
                     // Start race
                     this._view.startRace(this._model.winnerIndex);
+                    // Schedule phases
+                    setTimeout(this._view.nextPhase, 5000);
+                    setTimeout(this._view.nextPhase, 10000);
+                    setTimeout(this.makeNight, 15000);
+                    setTimeout(this._view.nextPhase, 15000);
+                };
+                RaceController.prototype.makeNight = function () {
+                    therace.Helper.makeNight(this._view.children);
+                    therace.Helper.makeNight(this._betSystem.view.children);
                 };
                 RaceController.prototype.lockUI = function (value) {
                     this._view.interactiveChildren = !value;

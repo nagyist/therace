@@ -23,6 +23,7 @@
     "src/betting/BetSystem.ts",
 
     "src/game/actors/Turtle.ts",
+    "src/game/Narator.ts",
     "src/game/RaceView.ts",
     "src/game/RaceModel.ts",
     "src/game/RaceController.ts",

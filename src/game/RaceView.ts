@@ -16,17 +16,20 @@ namespace com.gionadirashvili.therace
         private _selectionArrow:Sprite;
         private _selectedTurtle:Turtle;
 
-        private state:Function;
+        private _state:Function;
+
+        private _narator:Narator;
 
         public constructor(private _renderer:CanvasRenderer|WebGLRenderer)
         {
             super();
 
-            this.state = this.idleState;
+            this._state = this.idleState;
             this.init();
 
             // Bind methods to this
             this.render = this.render.bind(this);
+            this.nextPhase = this.nextPhase.bind(this);
             this.onTurtleClick = this.onTurtleClick.bind(this);
             // Start rendering loop
             this.render();
@@ -36,6 +39,13 @@ namespace com.gionadirashvili.therace
         {
             // Add background
             this.addChild(new Sprite(PIXI.utils.TextureCache["assets/images/bg.png"]));
+
+            // Create narator
+            this._narator = new Narator([
+                new NaratorSlide("1 hour later...", 2000),
+                new NaratorSlide("5 hours later...", 2000),
+                new NaratorSlide("Eventually...", 2000)
+            ], Launcher.GAME_WIDTH, Launcher.GAME_HEIGHT);
 
             // Add selection arrow
             this._selectionArrow = new Sprite(PIXI.utils.TextureCache["assets/images/selectionArrow.png"]);
@@ -90,7 +100,7 @@ namespace com.gionadirashvili.therace
 
         public startRace(winnerIndex:number):void
         {
-            this.state = this.raceState;
+            this._state = this.raceState;
 
             // Hide selection arrow
             this._selectionArrow.visible = false;
@@ -110,7 +120,8 @@ namespace com.gionadirashvili.therace
 
         public nextPhase():void
         {
-            
+            this.addChild(this._narator);
+            this._narator.nextSlide();
         }
 
         private selectTurtle(turtle:Turtle):void
@@ -155,7 +166,7 @@ namespace com.gionadirashvili.therace
         {
             requestAnimationFrame(this.render);
 
-            this.state();
+            this._state();
 
             if(this._isDirty)
                 this._renderer.render(this);

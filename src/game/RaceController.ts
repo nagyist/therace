@@ -28,10 +28,14 @@ namespace com.gionadirashvili.therace
             this._betSystem = new BetSystem();
             this._betSystem.view.on("placeBet", this.onPlaceBet.bind(this));
             this._view.addChild(this._betSystem.view);
+
+            // Bind methods
+            this.makeNight = this.makeNight.bind(this);
         }
 
         private onPlaceBet(value:number):void
         {
+            // Lock the UI to prevent clicks
             this.lockUI(true);
 
             // Place bet in model
@@ -39,6 +43,18 @@ namespace com.gionadirashvili.therace
 
             // Start race
             this._view.startRace(this._model.winnerIndex);
+
+            // Schedule phases
+            setTimeout(this._view.nextPhase, 5000);
+            setTimeout(this._view.nextPhase, 10000);
+            setTimeout(this.makeNight, 15000);
+            setTimeout(this._view.nextPhase, 15000);
+        }
+
+        private makeNight():void
+        {
+            Helper.makeNight(this._view.children);
+            Helper.makeNight(this._betSystem.view.children);
         }
 
         private lockUI(value:boolean):void
