@@ -9,8 +9,8 @@ namespace com.gionadirashvili.therace
     import Graphics = PIXI.Graphics;
     export class Launcher
     {
-        private GAME_WIDTH:number = 800;
-        private GAME_HEIGHT:number = 600;
+        public static GAME_WIDTH:number = 800;
+        public static GAME_HEIGHT:number = 600;
 
         private _renderer:WebGLRenderer|CanvasRenderer;
         private _stage:Container;
@@ -22,7 +22,8 @@ namespace com.gionadirashvili.therace
         {
             // Setup stage and renderer
             this._stage = new Container();
-            this._renderer = PIXI.autoDetectRenderer(this.GAME_WIDTH, this.GAME_HEIGHT, {
+            this._stage.interactive = true;
+            this._renderer = PIXI.autoDetectRenderer(Launcher.GAME_WIDTH, Launcher.GAME_HEIGHT, {
                 antialias: false,
                 transparent: false,
                 resolution: 1
@@ -54,7 +55,7 @@ namespace com.gionadirashvili.therace
             this._progressBar = new Graphics();
 
             // Initially draw empty progress bar
-            this.drawProgressBar(0x333333, this.GAME_WIDTH * .5);
+            this.drawProgressBar(0x333333, Launcher.GAME_WIDTH * .5);
 
             // Add to display list
             this._stage.addChild(this._progressBar);
@@ -69,8 +70,8 @@ namespace com.gionadirashvili.therace
             this._progressBar
                 .beginFill(color)
                 .drawRect(
-                    this.GAME_WIDTH * .25,
-                    this.GAME_HEIGHT * .5 - 2,
+                    Launcher.GAME_WIDTH * .25,
+                    Launcher.GAME_HEIGHT * .5 - 2,
                     width,
                     4
                 ).endFill();
@@ -79,7 +80,7 @@ namespace com.gionadirashvili.therace
         private onLoadProgress():void
         {
             // Fill the progress bar
-            this.drawProgressBar(0xCCCCCC, this.GAME_WIDTH * .5 * PIXI.loader.progress * 0.01);
+            this.drawProgressBar(0xCCCCCC, Launcher.GAME_WIDTH * .5 * PIXI.loader.progress * 0.01);
 
             // Render the stage
             this._renderer.render(this._stage);

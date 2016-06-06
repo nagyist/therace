@@ -7,6 +7,25 @@
     "sourceMap": true,
     "outFile": "build/race.js"
   },
+  "files": [
+    "typings/pixi.js.d.ts",
+
+    "src/utils/Helper.ts",
+
+    "src/common/Interfaces.ts",
+    "src/common/AObservable.ts",
+
+    "src/betting/BetSystemView.ts",
+    "src/betting/BetSystemModel.ts",
+    "src/betting/BetSystem.ts",
+
+    "src/game/actors/Turtle.ts",
+    "src/game/RaceView.ts",
+    "src/game/RaceModel.ts",
+    "src/game/RaceController.ts",
+
+    "src/Launcher.ts"
+  ],
   "exclude": [
     "node_modules",
     "build"

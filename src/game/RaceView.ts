@@ -75,7 +75,7 @@ namespace com.gionadirashvili.therace
             requestAnimationFrame(this.render);
 
             for(var i:number = 0, l = this._turtles.length; i < l; i++)
-                this.updateTurtle(_turtles[i])
+                this.updateTurtle(this._turtles[i])
 
             if(this._isDirty)
                 this._renderer.render(this);

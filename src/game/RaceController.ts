@@ -10,6 +10,7 @@ namespace com.gionadirashvili.therace
     {
         private _view:RaceView;
         private _model:RaceModel;
+        private _betSystem:BetSystem;
 
         public constructor(stage:Container, renderer:CanvasRenderer|WebGLRenderer)
         {
@@ -22,6 +23,10 @@ namespace com.gionadirashvili.therace
 
             // Set view as model's observer
             this._model.attachObserver(this._view, true);
+
+            // Create and add bet system to display list
+            this._betSystem = new BetSystem();
+            this._view.addChild(this._betSystem.view);
         }
     }
 }
