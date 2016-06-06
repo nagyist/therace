@@ -15,6 +15,7 @@
     "src/common/Interfaces.ts",
     "src/common/AObservable.ts",
 
+    "src/betting/Chip.ts",
     "src/betting/BetSystemView.ts",
     "src/betting/BetSystemModel.ts",
     "src/betting/BetSystem.ts",
