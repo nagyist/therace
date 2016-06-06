@@ -12,11 +12,15 @@ namespace com.gionadirashvili.therace
         private CHIP_VALUES:Array<number> = [ 10, 50, 100 ];
 
         private _balanceText:Text;
+        private _betText:Text;
         private _chipSelectors:Array<Chip> = [];
         private _selectedChip:Chip;
 
+        private _placeBetBtn:Button;
         private _placeBetBg:Sprite;
         private _placedChips:Array<Sprite> = [];
+
+        private _currentBetAmount:number = 0;
 
         public constructor()
         {
@@ -24,6 +28,7 @@ namespace com.gionadirashvili.therace
 
             this.onChipClick = this.onChipClick.bind(this);
             this.onPlaceChip = this.onPlaceChip.bind(this);
+            this.onPlaceBet = this.onPlaceBet.bind(this);
 
             this.init();
         }
@@ -43,6 +48,13 @@ namespace com.gionadirashvili.therace
             this._placeBetBg.interactive = true;
             this._placeBetBg.on("click", this.onPlaceChip);
             this.addChild(this._placeBetBg);
+
+            // Place bet button
+            this._placeBetBtn = new Button(PIXI.utils.TextureCache["assets/images/placeBetBtn.png"]);
+            this._placeBetBtn.anchor.set(.5, .5);
+            this._placeBetBtn.position.set(this._placeBetBg.position.x + this._placeBetBtn.width + 40, this._placeBetBg.position.y);
+            this._placeBetBtn.on("click", this.onPlaceBet);
+            this.addChild(this._placeBetBtn);
 
             // Add chip selectors
             let MARGIN:number = 5,
@@ -84,6 +96,15 @@ namespace com.gionadirashvili.therace
             );
             this._balanceText.position.set(10, (statusBg.height - this._balanceText.height) * .5 + statusBg.y);
             this.addChild(this._balanceText);
+
+            // Bet text
+            this._betText = new Text(
+                "Bet: " + Helper.formatMoney(0),
+                {font : '20px Arial', fill : 0xEEEEEE, align : 'right'}
+            );
+            this._betText.anchor.set(1, 0);
+            this._betText.position.set(Launcher.GAME_WIDTH - 10, (statusBg.height - this._betText.height) * .5 + statusBg.y);
+            this.addChild(this._betText);
         }
 
         private selectChip(chip:Chip):void
@@ -98,6 +119,15 @@ namespace com.gionadirashvili.therace
         private onPlaceChip(e:any):void
         {
             this.emit("addBet", this._selectedChip.value);
+        }
+
+        private onPlaceBet(e:any):void
+        {
+            if(this._currentBetAmount != 0)
+            {
+                this.emit("placeBet", this._currentBetAmount);
+                this._placeBetBtn.visible = false;
+            }
         }
 
         private onChipClick(e:any):void
@@ -117,6 +147,12 @@ namespace com.gionadirashvili.therace
 
         public update_bet(model:BetSystemModel):void
         {
+            // Store current bet amount to then emit an event when player places a bet
+            this._currentBetAmount = model.bet;
+
+            // Update text box
+            this._betText.text = "Bet: " + Helper.formatMoney(model.bet);
+
             // Clear old chips
             while(this._placedChips.length > 0)
                 this.removeChild(this._placedChips.pop());
@@ -147,6 +183,7 @@ namespace com.gionadirashvili.therace
                 }
                 else
                 {
+                    // Step one chip value lower
                     chipIndex--;
 
                     if(chipIndex < 0)

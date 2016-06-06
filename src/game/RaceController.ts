@@ -26,7 +26,13 @@ namespace com.gionadirashvili.therace
 
             // Create and add bet system to display list
             this._betSystem = new BetSystem();
+            this._betSystem.view.on("placeBet", this.onPlaceBet.bind(this));
             this._view.addChild(this._betSystem.view);
+        }
+
+        private onPlaceBet(value:number):void
+        {
+            console.log("Bet has been placed:", value);
         }
     }
 }

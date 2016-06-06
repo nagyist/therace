@@ -3,8 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <title>TheRace</title>
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            background-color: black;
+        }
+        #game-wrapper {
+            width: 100%;
+            height: 100%;
+        }
+        canvas {
+            margin: 0 auto;
+            display: block;
+        }
+    </style>
 </head>
 <body onload="init()">
+    <div id="game-wrapper">
+    </div>
     <script src="pixi.min.js"></script>
     <script src="race.js" type="application/javascript"></script>
     <script type="application/javascript">

@@ -80,6 +80,45 @@ var com;
         var therace;
         (function (therace) {
             var Sprite = PIXI.Sprite;
+            var Button = (function (_super) {
+                __extends(Button, _super);
+                function Button(texture) {
+                    if (texture === void 0) { texture = null; }
+                    _super.call(this, texture);
+                    this.interactive = true;
+                    // Mouse over and mouse up should behave the same, hence same event listeners
+                    this.on("mouseover", this.onMouseOver.bind(this));
+                    this.on("mouseup", this.onMouseOver.bind(this));
+                    this.on("mouseout", this.onMouseOut.bind(this));
+                    this.on("mousedown", this.onMouseDown.bind(this));
+                    // Inactive tint
+                    this.tint = 0x00CCCCCC;
+                }
+                Button.prototype.onMouseOver = function (e) {
+                    this.tint = 0xFFFFFFFF;
+                };
+                Button.prototype.onMouseOut = function (e) {
+                    this.tint = 0x00CCCCCC;
+                };
+                Button.prototype.onMouseDown = function (e) {
+                    this.tint = 0x00666666;
+                };
+                return Button;
+            }(Sprite));
+            therace.Button = Button;
+        })(therace = gionadirashvili.therace || (gionadirashvili.therace = {}));
+    })(gionadirashvili = com.gionadirashvili || (com.gionadirashvili = {}));
+})(com || (com = {}));
+/**
+ * Created by gio on 6/6/16.
+ */
+var com;
+(function (com) {
+    var gionadirashvili;
+    (function (gionadirashvili) {
+        var therace;
+        (function (therace) {
+            var Sprite = PIXI.Sprite;
             var Text = PIXI.Text;
             var Container = PIXI.Container;
             var Chip = (function (_super) {
@@ -149,8 +188,10 @@ var com;
                     this.CHIP_VALUES = [10, 50, 100];
                     this._chipSelectors = [];
                     this._placedChips = [];
+                    this._currentBetAmount = 0;
                     this.onChipClick = this.onChipClick.bind(this);
                     this.onPlaceChip = this.onPlaceChip.bind(this);
+                    this.onPlaceBet = this.onPlaceBet.bind(this);
                     this.init();
                 }
                 BetSystemView.prototype.init = function () {
@@ -166,6 +207,12 @@ var com;
                     this._placeBetBg.interactive = true;
                     this._placeBetBg.on("click", this.onPlaceChip);
                     this.addChild(this._placeBetBg);
+                    // Place bet button
+                    this._placeBetBtn = new therace.Button(PIXI.utils.TextureCache["assets/images/placeBetBtn.png"]);
+                    this._placeBetBtn.anchor.set(.5, .5);
+                    this._placeBetBtn.position.set(this._placeBetBg.position.x + this._placeBetBtn.width + 40, this._placeBetBg.position.y);
+                    this._placeBetBtn.on("click", this.onPlaceBet);
+                    this.addChild(this._placeBetBtn);
                     // Add chip selectors
                     var MARGIN = 5, CHIP_COUNT = this.CHIP_VALUES.length;
                     var chip, startX = (therace.Launcher.GAME_WIDTH - CHIP_COUNT * (therace.Chip.CHIP_WIDTH + MARGIN)) * .5;
@@ -194,6 +241,11 @@ var com;
                     this._balanceText = new Text("Balance: " + therace.Helper.formatMoney(0), { font: '20px Arial', fill: 0xEEEEEE, align: 'left' });
                     this._balanceText.position.set(10, (statusBg.height - this._balanceText.height) * .5 + statusBg.y);
                     this.addChild(this._balanceText);
+                    // Bet text
+                    this._betText = new Text("Bet: " + therace.Helper.formatMoney(0), { font: '20px Arial', fill: 0xEEEEEE, align: 'right' });
+                    this._betText.anchor.set(1, 0);
+                    this._betText.position.set(therace.Launcher.GAME_WIDTH - 10, (statusBg.height - this._betText.height) * .5 + statusBg.y);
+                    this.addChild(this._betText);
                 };
                 BetSystemView.prototype.selectChip = function (chip) {
                     for (var i = 0, l = this._chipSelectors.length; i < l; i++)
@@ -204,6 +256,12 @@ var com;
                 BetSystemView.prototype.onPlaceChip = function (e) {
                     this.emit("addBet", this._selectedChip.value);
                 };
+                BetSystemView.prototype.onPlaceBet = function (e) {
+                    if (this._currentBetAmount != 0) {
+                        this.emit("placeBet", this._currentBetAmount);
+                        this._placeBetBtn.visible = false;
+                    }
+                };
                 BetSystemView.prototype.onChipClick = function (e) {
                     this.selectChip(e.target);
                 };
@@ -213,6 +271,10 @@ var com;
                     this._balanceText.text = "Balance: " + therace.Helper.formatMoney(model.balance);
                 };
                 BetSystemView.prototype.update_bet = function (model) {
+                    // Store current bet amount to then emit an event when player places a bet
+                    this._currentBetAmount = model.bet;
+                    // Update text box
+                    this._betText.text = "Bet: " + therace.Helper.formatMoney(model.bet);
                     // Clear old chips
                     while (this._placedChips.length > 0)
                         this.removeChild(this._placedChips.pop());
@@ -234,6 +296,7 @@ var com;
                             this.addChild(chip);
                         }
                         else {
+                            // Step one chip value lower
                             chipIndex--;
                             if (chipIndex < 0) {
                                 console.warn("Can't display bet visually using existing chips:", model.bet);
@@ -311,8 +374,7 @@ var com;
                     // Add view as an observer to the model
                     this._model.attachObserver(this._view);
                     // Add listener to the view
-                    this.onAddBet = this.onAddBet.bind(this);
-                    this._view.on("addBet", this.onAddBet);
+                    this._view.on("addBet", this.onAddBet.bind(this));
                     // Initially get the balance
                     this.getBalance();
                 }
@@ -503,8 +565,12 @@ var com;
                     this._model.attachObserver(this._view, true);
                     // Create and add bet system to display list
                     this._betSystem = new therace.BetSystem();
+                    this._betSystem.view.on("placeBet", this.onPlaceBet.bind(this));
                     this._view.addChild(this._betSystem.view);
                 }
+                RaceController.prototype.onPlaceBet = function (value) {
+                    console.log("Bet has been placed:", value);
+                };
                 return RaceController;
             }());
             therace.RaceController = RaceController;
@@ -534,7 +600,7 @@ var com;
                     });
                     this._renderer.backgroundColor = 0x141414;
                     // Add view to HTML DOM tree
-                    document.body.appendChild(this._renderer.view);
+                    document.getElementById("game-wrapper").appendChild(this._renderer.view);
                     // Create progress bar
                     this.initProgressBar();
                     // Start loading assets
@@ -575,7 +641,7 @@ var com;
                     this._renderer.render(this._stage);
                 };
                 Launcher.prototype.onLoadComplete = function () {
-                    console.log("onLoadComplete");
+                    console.log("Assets loaded");
                     // Dispose progress bar
                     this._stage.removeChild(this._progressBar);
                     this._progressBar = null;

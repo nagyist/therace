@@ -18,8 +18,7 @@ namespace com.gionadirashvili.therace
             this._model.attachObserver(this._view);
 
             // Add listener to the view
-            this.onAddBet = this.onAddBet.bind(this);
-            this._view.on("addBet", this.onAddBet);
+            this._view.on("addBet", this.onAddBet.bind(this));
 
             // Initially get the balance
             this.getBalance();

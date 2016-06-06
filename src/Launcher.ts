@@ -31,7 +31,7 @@ namespace com.gionadirashvili.therace
             this._renderer.backgroundColor = 0x141414;
 
             // Add view to HTML DOM tree
-            document.body.appendChild(this._renderer.view);
+            document.getElementById("game-wrapper").appendChild(this._renderer.view);
 
             // Create progress bar
             this.initProgressBar();
@@ -91,7 +91,7 @@ namespace com.gionadirashvili.therace
 
         private onLoadComplete():void
         {
-            console.log("onLoadComplete");
+            console.log("Assets loaded");
 
             // Dispose progress bar
             this._stage.removeChild(this._progressBar);
