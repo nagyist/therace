@@ -12,6 +12,8 @@ namespace com.gionadirashvili.therace
             super(texture);
 
             this.interactive = true;
+            this.buttonMode = true;
+
             // Mouse over and mouse up should behave the same, hence same event listeners
             this.on("mouseover", this.onMouseOver.bind(this));
             this.on("mouseup", this.onMouseOver.bind(this));

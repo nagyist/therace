@@ -16,6 +16,10 @@ namespace com.gionadirashvili.therace
         private _move:MovieClip;
         private _sleep:Sprite;
 
+        private _selected:boolean;
+
+        private _speed:number = 1;
+
         public constructor(private _index:number)
         {
             super();
@@ -25,13 +29,17 @@ namespace com.gionadirashvili.therace
 
         private init():void
         {
+            // Make interactive
+            this.interactive = true;
+            this.buttonMode = true;
+
             // Create different animations for turtle
             this._idle = this.createMovieClip(0, 10);
-            this._move = this.createMovieClip(11, 18);
+            this._move = this.createMovieClip(11, 17);
 
             // Set speed
             this._idle.animationSpeed = 0.15;
-            this._move.animationSpeed = 0.15;
+            this._move.animationSpeed = 0.02;
 
             // Set pivots to center
             this._idle.anchor.set(0.5, 0.5);
@@ -44,6 +52,9 @@ namespace com.gionadirashvili.therace
             // Add default state animation to display list
             this._idle.gotoAndPlay(Math.random() * 10);
             this.addChild(this._idle);
+
+            // Tint inactive
+            this._idle.tint = 0x00666666;
         }
 
         private createMovieClip(startFrame:number, endFrame:number):MovieClip
@@ -73,6 +84,31 @@ namespace com.gionadirashvili.therace
 
             // Create and return MovieClip
             return new MovieClip(frames);
+        }
+
+        public updateMovement(isWinning:boolean):void
+        {
+            if(this._idle.parent)
+            {
+                this._idle.stop();
+                this.removeChild(this._idle);
+
+                this.addChild(this._move);
+            }
+
+            this._move.animationSpeed = isWinning ? 0.04 : 0.02;
+            this._speed = isWinning ? 5 : 3;
+            this._move.gotoAndPlay(Math.random() * 7);
+        }
+
+        public get speed():number { return this._speed; }
+        public get index():number { return this._index; }
+
+        public get selected():boolean { return this._selected; }
+        public set selected(value:boolean)
+        {
+            this._selected = value;
+            this._idle.tint = value ? 0xFFFFFFFF : 0x00666666;
         }
     }
 }

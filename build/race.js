@@ -86,6 +86,7 @@ var com;
                     if (texture === void 0) { texture = null; }
                     _super.call(this, texture);
                     this.interactive = true;
+                    this.buttonMode = true;
                     // Mouse over and mouse up should behave the same, hence same event listeners
                     this.on("mouseover", this.onMouseOver.bind(this));
                     this.on("mouseup", this.onMouseOver.bind(this));
@@ -137,6 +138,7 @@ var com;
                     this._bg.tint = 0x00CCCCCC;
                     // Define interactiveness
                     this.interactive = true;
+                    this.buttonMode = true;
                     // Add text display
                     var txt = new Text(this._value.toString(), { font: '14px Arial', fill: 0x0, align: 'center' });
                     txt.position.set((this._bg.width - txt.width) * .5, 5);
@@ -205,6 +207,7 @@ var com;
                     this._placeBetBg.anchor.set(.5, .5);
                     this._placeBetBg.position.set(betSystemBg.x, betSystemBg.y - betSystemBg.height + this._placeBetBg.height * .5 + 10);
                     this._placeBetBg.interactive = true;
+                    this._placeBetBg.buttonMode = true;
                     this._placeBetBg.on("click", this.onPlaceChip);
                     this.addChild(this._placeBetBg);
                     // Place bet button
@@ -212,6 +215,7 @@ var com;
                     this._placeBetBtn.anchor.set(.5, .5);
                     this._placeBetBtn.position.set(this._placeBetBg.position.x + this._placeBetBtn.width + 40, this._placeBetBg.position.y);
                     this._placeBetBtn.on("click", this.onPlaceBet);
+                    this._placeBetBtn.visible = false;
                     this.addChild(this._placeBetBtn);
                     // Add chip selectors
                     var MARGIN = 5, CHIP_COUNT = this.CHIP_VALUES.length;
@@ -275,6 +279,8 @@ var com;
                     this._currentBetAmount = model.bet;
                     // Update text box
                     this._betText.text = "Bet: " + therace.Helper.formatMoney(model.bet);
+                    // Update button state
+                    this._placeBetBtn.visible = model.bet > 0;
                     // Clear old chips
                     while (this._placedChips.length > 0)
                         this.removeChild(this._placedChips.pop());
@@ -346,6 +352,16 @@ var com;
                     enumerable: true,
                     configurable: true
                 });
+                Object.defineProperty(BetSystemModel.prototype, "win", {
+                    set: function (value) {
+                        this._balance += value;
+                        this._bet = 0;
+                        this.updateObservers("balance");
+                        this.updateObservers("bet");
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 Object.defineProperty(BetSystemModel.prototype, "bet", {
                     get: function () { return this._bet; },
                     enumerable: true,
@@ -382,8 +398,15 @@ var com;
                     this._model.addBet(value);
                 };
                 BetSystem.prototype.getBalance = function () {
-                    this._model.balance = 200;
+                    this._model.balance = 500;
                 };
+                Object.defineProperty(BetSystem.prototype, "win", {
+                    set: function (value) {
+                        this._model.win = value;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 Object.defineProperty(BetSystem.prototype, "view", {
                     get: function () { return this._view; },
                     enumerable: true,
@@ -413,15 +436,19 @@ var com;
                     _super.call(this);
                     this._index = _index;
                     this.TEXTURE_ID_TEMPLATE = "assets/images/turtles/turtle$.png";
+                    this._speed = 1;
                     this.init();
                 }
                 Turtle.prototype.init = function () {
+                    // Make interactive
+                    this.interactive = true;
+                    this.buttonMode = true;
                     // Create different animations for turtle
                     this._idle = this.createMovieClip(0, 10);
-                    this._move = this.createMovieClip(11, 18);
+                    this._move = this.createMovieClip(11, 17);
                     // Set speed
                     this._idle.animationSpeed = 0.15;
-                    this._move.animationSpeed = 0.15;
+                    this._move.animationSpeed = 0.02;
                     // Set pivots to center
                     this._idle.anchor.set(0.5, 0.5);
                     this._move.anchor.set(0.5, 0.5);
@@ -431,6 +458,8 @@ var com;
                     // Add default state animation to display list
                     this._idle.gotoAndPlay(Math.random() * 10);
                     this.addChild(this._idle);
+                    // Tint inactive
+                    this._idle.tint = 0x00666666;
                 };
                 Turtle.prototype.createMovieClip = function (startFrame, endFrame) {
                     // Get texture id. Textures don't use 0 based enumeration, hence +1
@@ -450,6 +479,35 @@ var com;
                     // Create and return MovieClip
                     return new MovieClip(frames);
                 };
+                Turtle.prototype.updateMovement = function (isWinning) {
+                    if (this._idle.parent) {
+                        this._idle.stop();
+                        this.removeChild(this._idle);
+                        this.addChild(this._move);
+                    }
+                    this._move.animationSpeed = isWinning ? 0.04 : 0.02;
+                    this._speed = isWinning ? 5 : 3;
+                    this._move.gotoAndPlay(Math.random() * 7);
+                };
+                Object.defineProperty(Turtle.prototype, "speed", {
+                    get: function () { return this._speed; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(Turtle.prototype, "index", {
+                    get: function () { return this._index; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(Turtle.prototype, "selected", {
+                    get: function () { return this._selected; },
+                    set: function (value) {
+                        this._selected = value;
+                        this._idle.tint = value ? 0xFFFFFFFF : 0x00666666;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 return Turtle;
             }(Container));
             therace.Turtle = Turtle;
@@ -475,14 +533,20 @@ var com;
                     // Used to optimize draw calls and manually control whether or not should the renderer redraw the stage
                     this._isDirty = true;
                     this._turtles = [];
+                    this.state = this.idleState;
                     this.init();
-                    // Bind render method to this
+                    // Bind methods to this
                     this.render = this.render.bind(this);
+                    this.onTurtleClick = this.onTurtleClick.bind(this);
                     // Start rendering loop
                     this.render();
                 }
                 RaceView.prototype.init = function () {
+                    // Add background
                     this.addChild(new Sprite(PIXI.utils.TextureCache["assets/images/bg.png"]));
+                    // Add selection arrow
+                    this._selectionArrow = new Sprite(PIXI.utils.TextureCache["assets/images/selectionArrow.png"]);
+                    this.addChild(this._selectionArrow);
                 };
                 RaceView.prototype.clearState = function () {
                     //TODO clear state
@@ -490,14 +554,21 @@ var com;
                 RaceView.prototype.newGame = function (turtleCount) {
                     // Clear old state before starting new game
                     this.clearState();
+                    if (turtleCount == 0)
+                        return;
                     // Add turtles to the scene
                     var turtle;
                     for (var i = 0; i < turtleCount; i++) {
                         turtle = new therace.Turtle(i);
                         turtle.position.set(40, i * 60 + 120);
+                        turtle.on("click", this.onTurtleClick);
                         this._turtles.push(turtle);
                         this.addChild(turtle);
                     }
+                    this.selectTurtle(this._turtles[0]);
+                };
+                RaceView.prototype.onTurtleClick = function (e) {
+                    this.selectTurtle(e.target);
                 };
                 RaceView.prototype.update = function (observable) {
                     // Cast observable to RaceModel class for code hinting and since we know no other observable will come in here
@@ -507,16 +578,58 @@ var com;
                     if (this._turtles.length != model.turtleCount)
                         this.newGame(model.turtleCount);
                 };
+                RaceView.prototype.startRace = function (winnerIndex) {
+                    this.state = this.raceState;
+                    // Hide selection arrow
+                    this._selectionArrow.visible = false;
+                    var turtle;
+                    for (var i = 0, l = this._turtles.length; i < l; i++) {
+                        turtle = this._turtles[i];
+                        // Deselect all turtles/clear all tints
+                        turtle.selected = false;
+                        // Update turtles to use move animation
+                        turtle.updateMovement(Math.random() * 10 < 5);
+                    }
+                };
+                RaceView.prototype.nextPhase = function () {
+                };
+                RaceView.prototype.selectTurtle = function (turtle) {
+                    // Deselect all
+                    for (var i = 0, l = this._turtles.length; i < l; i++)
+                        this._turtles[i].selected = false;
+                    // Select clicked turtle
+                    turtle.selected = true;
+                    this._selectedTurtle = turtle;
+                    // Move selection arrow to selected turtle
+                    this.addChild(this._selectionArrow);
+                    this._selectionArrow.position.set(turtle.position.x - 20, turtle.position.y - 50);
+                };
+                RaceView.prototype.idleState = function () {
+                    this.updateSelectionArrow();
+                };
+                RaceView.prototype.raceState = function () {
+                    for (var i = 0, l = this._turtles.length; i < l; i++)
+                        this.updateTurtle(this._turtles[i]);
+                };
                 RaceView.prototype.updateTurtle = function (turtle) {
-                    //TODO update turtle visuals
+                    // Update x position
+                    turtle.position.x += turtle.speed * PIXI.ticker.shared.deltaTime * 0.01;
+                };
+                RaceView.prototype.updateSelectionArrow = function () {
+                    if (this._selectedTurtle)
+                        this._selectionArrow.position.y = this._selectedTurtle.position.y - 50 + Math.sin(PIXI.ticker.shared.lastTime * 0.01) * 2;
                 };
                 RaceView.prototype.render = function () {
                     requestAnimationFrame(this.render);
-                    for (var i = 0, l = this._turtles.length; i < l; i++)
-                        this.updateTurtle(this._turtles[i]);
+                    this.state();
                     if (this._isDirty)
                         this._renderer.render(this);
                 };
+                Object.defineProperty(RaceView.prototype, "selectedTurtleIndex", {
+                    get: function () { return this._selectedTurtle.index; },
+                    enumerable: true,
+                    configurable: true
+                });
                 return RaceView;
             }(Container));
             therace.RaceView = RaceView;
@@ -537,8 +650,20 @@ var com;
                 function RaceModel() {
                     _super.call(this);
                     this.turtleCount = 3;
-                    this._observable = new therace.AObservable();
                 }
+                RaceModel.prototype.receiveBet = function (turtleIndex, betAmount) {
+                    // Playing pretty fair here ;)
+                    // Generate winning turtle index
+                    this._winningTurtleIndex = Math.floor((Math.random() * 100) / (100 / this.turtleCount));
+                    // Store player bet amount and turtle index
+                    this._playerTurtleIndex = turtleIndex;
+                    this._betAmount = betAmount;
+                };
+                Object.defineProperty(RaceModel.prototype, "winnerIndex", {
+                    get: function () { return this._winningTurtleIndex; },
+                    enumerable: true,
+                    configurable: true
+                });
                 return RaceModel;
             }(therace.AObservable));
             therace.RaceModel = RaceModel;
@@ -569,7 +694,15 @@ var com;
                     this._view.addChild(this._betSystem.view);
                 }
                 RaceController.prototype.onPlaceBet = function (value) {
-                    console.log("Bet has been placed:", value);
+                    this.lockUI(true);
+                    // Place bet in model
+                    this._model.receiveBet(this._view.selectedTurtleIndex, value);
+                    // Start race
+                    this._view.startRace(this._model.winnerIndex);
+                };
+                RaceController.prototype.lockUI = function (value) {
+                    this._view.interactiveChildren = !value;
+                    this._betSystem.view.interactiveChildren = !value;
                 };
                 return RaceController;
             }());
@@ -613,6 +746,7 @@ var com;
                         "assets/images/betSystemBg.png",
                         "assets/images/placeBetBg.png",
                         "assets/images/placeBetBtn.png",
+                        "assets/images/selectionArrow.png",
                         "assets/images/chips/chips.json"
                     ])
                         .load(this.onLoadComplete.bind(this))

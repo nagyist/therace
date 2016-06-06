@@ -35,6 +35,15 @@ namespace com.gionadirashvili.therace
             this.updateObservers("balance");
         }
 
+        public set win(value:number)
+        {
+            this._balance += value;
+            this._bet = 0;
+
+            this.updateObservers("balance");
+            this.updateObservers("bet");
+        }
+
         public get bet():number { return this._bet; }
     }
 }

@@ -28,6 +28,7 @@ namespace com.gionadirashvili.therace
 
             // Define interactiveness
             this.interactive = true;
+            this.buttonMode = true;
 
             // Add text display
             var txt:Text = new Text(

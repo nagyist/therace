@@ -46,6 +46,7 @@ namespace com.gionadirashvili.therace
             this._placeBetBg.anchor.set(.5, .5);
             this._placeBetBg.position.set(betSystemBg.x, betSystemBg.y - betSystemBg.height + this._placeBetBg.height * .5 + 10);
             this._placeBetBg.interactive = true;
+            this._placeBetBg.buttonMode = true;
             this._placeBetBg.on("click", this.onPlaceChip);
             this.addChild(this._placeBetBg);
 
@@ -54,6 +55,7 @@ namespace com.gionadirashvili.therace
             this._placeBetBtn.anchor.set(.5, .5);
             this._placeBetBtn.position.set(this._placeBetBg.position.x + this._placeBetBtn.width + 40, this._placeBetBg.position.y);
             this._placeBetBtn.on("click", this.onPlaceBet);
+            this._placeBetBtn.visible = false;
             this.addChild(this._placeBetBtn);
 
             // Add chip selectors
@@ -152,6 +154,9 @@ namespace com.gionadirashvili.therace
 
             // Update text box
             this._betText.text = "Bet: " + Helper.formatMoney(model.bet);
+
+            // Update button state
+            this._placeBetBtn.visible = model.bet > 0;
 
             // Clear old chips
             while(this._placedChips.length > 0)

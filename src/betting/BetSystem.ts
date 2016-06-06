@@ -31,7 +31,12 @@ namespace com.gionadirashvili.therace
 
         private getBalance():void
         {
-            this._model.balance = 200;
+            this._model.balance = 500;
+        }
+
+        public set win(value:number)
+        {
+            this._model.win = value;
         }
 
         public get view():BetSystemView { return this._view; }

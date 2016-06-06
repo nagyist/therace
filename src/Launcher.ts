@@ -46,6 +46,7 @@ namespace com.gionadirashvili.therace
                     "assets/images/betSystemBg.png",
                     "assets/images/placeBetBg.png",
                     "assets/images/placeBetBtn.png",
+                    "assets/images/selectionArrow.png",
                     "assets/images/chips/chips.json"
                 ])
                 .load(this.onLoadComplete.bind(this))

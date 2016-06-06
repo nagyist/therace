@@ -32,7 +32,19 @@ namespace com.gionadirashvili.therace
 
         private onPlaceBet(value:number):void
         {
-            console.log("Bet has been placed:", value);
+            this.lockUI(true);
+
+            // Place bet in model
+            this._model.receiveBet(this._view.selectedTurtleIndex, value);
+
+            // Start race
+            this._view.startRace(this._model.winnerIndex);
+        }
+
+        private lockUI(value:boolean):void
+        {
+            this._view.interactiveChildren = !value;
+            this._betSystem.view.interactiveChildren = !value;
         }
     }
 }
